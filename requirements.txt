@@ -1,0 +1,10 @@
+traits
+traitsui
+chaco
+pyserial
+pyside
+qt
+enable
+kiwisolver
+numpy
+enable
