@@ -151,6 +151,7 @@ class LightSensorApplication(HasTraits):
     timer = Instance(Timer)
     view = View(Item('controller', style='custom', show_label=False),
                 Item('viewer', style='custom', show_label=False),
+                title='LightSensor App',
                 handler=LSHandler,
                 resizable=True)
 
