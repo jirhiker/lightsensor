@@ -37,7 +37,7 @@ class LightSensor(HasTraits):
     def init(self):
         addr=self.address
         try:
-            self._dev = serial.Serial(addr)
+            self._dev = serial.Serial(addr, baudrate=115200)
         except OSError:
             warning(None, 'Invalid device address. {}. Entering simulation mode'.format(addr))
             self._simulation = True

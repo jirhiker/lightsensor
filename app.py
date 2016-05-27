@@ -32,6 +32,8 @@ from numpy import hstack
 from paths import unique_path
 from sensor import LightSensor
 
+PERIOD = 1000
+
 
 class Viewer(HasTraits):
     """ This class just contains the two data arrays that will be updated
@@ -93,7 +95,7 @@ class Controller(HasTraits):
             self.device = dev
 
     def _window_changed(self):
-        self.max_num_points = int(self.window * 10)
+        self.max_num_points = int(self.window)
 
     def timer_tick(self, *args):
         """
@@ -158,19 +160,19 @@ class LightSensorApplication(HasTraits):
     def edit_traits(self, *args, **kws):
         # Start up the timer! We should do this only when the demo actually
         # starts and not when the demo object is created.
-        self.timer = Timer(100, self.controller.timer_tick)
+        self.timer = Timer(PERIOD, self.controller.timer_tick)
         return super(LightSensorApplication, self).edit_traits(*args, **kws)
 
     def configure_traits(self, *args, **kws):
         # Start up the timer! We should do this only when the demo actually
         # starts and not when the demo object is created.
-        self.timer = Timer(100, self.controller.timer_tick)
+        self.timer = Timer(PERIOD, self.controller.timer_tick)
         return super(LightSensorApplication, self).configure_traits(*args, **kws)
 
     def _controller_default(self):
         ports = glob.glob('/dev/tty.usb*')
         return Controller(viewer=self.viewer,
-                          ports=ports+['foo'])
+                          ports=ports + ['foo'])
 
 
 if __name__ == '__main__':
