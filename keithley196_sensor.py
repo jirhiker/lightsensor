@@ -20,7 +20,7 @@ import re
 # ============= local library imports  ==========================
 from base_sensor import BaseLightSensor
 
-REGEX = re.compile(r'^(NDCV)(\+|-)(?P<value>\d+\.\d+E(\+|-)\d+)')
+REGEX = re.compile(r'^(NDCV)(?P<value>(\+|-)\d+\.\d+E(\+|-)\d+)')
 
 class Keithley196LightSensor(BaseLightSensor):
     primary_address = 7
