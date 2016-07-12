@@ -31,8 +31,9 @@ from numpy import hstack, r_, ones, convolve, asarray
 # ============= local library imports  ==========================
 
 # adapted from https://github.com/enthought/chaco/blob/master/examples/demo/advanced/data_stream.py
+from base_sensor import BaseLightSensor
 from paths import unique_path
-from sensor import LightSensor
+# from arduino_sensor import ArduinoLightSensor
 
 PERIOD = 250
 
@@ -80,7 +81,7 @@ class Viewer(HasTraits):
         return v
 
 
-class Controller(HasTraits):
+class BaseController(HasTraits):
     # A reference to the plot viewer object
     viewer = Instance(Viewer)
 
@@ -92,24 +93,10 @@ class Controller(HasTraits):
     stop_button = Button
     port = Str
     ports = List
-    view = View(HGroup(UItem('record_button', enabled_when='not _recording and device'),
-                       UItem('stop_button', enabled_when='_recording and device'),
-                       Item('window'),
-                       UItem('port', editor=EnumEditor(name='ports'))),
-                buttons=["OK", "Cancel"])
-    device = Instance(LightSensor)
+
+    device = Instance(BaseLightSensor)
     start_time = 0
     _recording = Bool(False)
-
-    def _port_changed(self):
-        if self.port:
-            self.start_time = time.time()
-            if self.device:
-                self.device.close()
-
-            dev = LightSensor(address=self.port)
-            dev.init()
-            self.device = dev
 
     def _window_changed(self):
         self.max_num_points = int(self.window*1000/float(PERIOD))
@@ -161,6 +148,42 @@ class Controller(HasTraits):
         self._recording = False
 
 
+class ArduionController(BaseController):
+    port = Str
+    ports = List
+    view = View(HGroup(UItem('record_button', enabled_when='not _recording and device'),
+                       UItem('stop_button', enabled_when='_recording and device'),
+                       Item('window'),
+                       UItem('port', editor=EnumEditor(name='ports'))),
+                buttons=["OK", "Cancel"])
+
+    def _port_changed(self):
+        if self.port:
+            self.start_time = time.time()
+            if self.device:
+                self.device.close()
+
+            from arduino_sensor import ArduinoLightSensor
+            dev = ArduinoLightSensor(address=self.port)
+            dev.init()
+            self.device = dev
+
+
+class KeithleyController(BaseController):
+    view = View(HGroup(UItem('record_button', enabled_when='not _recording and device'),
+                       UItem('stop_button', enabled_when='_recording and device'),
+                       Item('window')),
+
+                buttons=["OK", "Cancel"])
+
+    def _device_default(self):
+        self.start_time = time.time()
+        from keithley196_sensor import Keithley196LightSensor
+        dev = Keithley196LightSensor(address='GPIB0::10::INSTR')
+        dev.init()
+        return dev
+
+
 class LSHandler(Handler):
     def closed(self, info, is_ok):
         """ Handles a dialog-based user interface being closed by the user.
@@ -172,7 +195,7 @@ class LSHandler(Handler):
 
 
 class LightSensorApplication(HasTraits):
-    controller = Instance(Controller)
+    controller = Instance(BaseController)
     viewer = Instance(Viewer, ())
     timer = Instance(Timer)
     view = View(Item('controller', style='custom', show_label=False),
@@ -180,6 +203,7 @@ class LightSensorApplication(HasTraits):
                 title='LightSensor App',
                 handler=LSHandler,
                 resizable=True)
+    controller_klass = None
 
     def edit_traits(self, *args, **kws):
         # Start up the timer! We should do this only when the demo actually
@@ -195,12 +219,12 @@ class LightSensorApplication(HasTraits):
 
     def _controller_default(self):
         ports = glob.glob('/dev/tty.usb*')
-        return Controller(viewer=self.viewer,
-                          window=500,
-                          ports=ports)
+        return self.controller_klass(viewer=self.viewer,
+                                     window=500,
+                                     ports=ports)
 
 
 if __name__ == '__main__':
-    app = LightSensorApplication()
+    app = LightSensorApplication(controller_klass=KeithleyController)
     app.configure_traits()
 # ============= EOF =============================================
